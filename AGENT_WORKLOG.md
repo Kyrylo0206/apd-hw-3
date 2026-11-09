@@ -10,6 +10,7 @@ you rejected or revised; if none was rejectable, explain why.
 | 2026-11-08 | Claude Sonnet 5.5 (Claude Code sub-agent): wrote the UIKit/SnapKit app code and tests from the plan — list, cell, detail, subject filter, add/edit form, swipe delete, 12 store tests, 10 controller tests, 7 UI tests | Full diff inspected file by file: no comments, no force unwraps/casts, SnapKit-only layout, identifiers match the spec, form never mutates the store directly, starter files untouched | `git diff` of the implementation commit; `StudentDirectory/`, `StudentDirectoryTests/`, `StudentDirectoryUITests/` |
 | 2026-11-08 | Review of the generated code (Opus 5.5) and revisions applied by Sonnet 5.5 | Three generated choices revised (see Final review) | Implementation commit diff |
 | 2026-11-08 | Local environment: Xcode 26.3 had no iOS Simulator runtime; installed iOS 26.3.1 runtime with `xcodebuild -downloadPlatform iOS`; first test run stalled on simulator boot and was re-run after booting the `iPhone 17` simulator manually | Verified the `iPhone 17` destination exists before running the README command | `xcrun simctl list devices available` |
+| 2026-11-08 | GitHub Actions run of commit `336e949` (Xcode 16.4 runner): all unit tests and the starter UI tests passed; all 7 new flow UI tests failed. Diagnosis (Opus 5.5): the generated Info.plist has an empty `UISceneConfigurations`, so `SceneDelegate` was never attached and the app launched to an empty window. Fix written by Sonnet 5.5: the app delegate sets `delegateClass = SceneDelegate.self` and owns the single `StudentStore`; UI test waits raised to 15 s for slow CI simulators | Failure traced to the generated scene manifest in the built `Info.plist` rather than to the tests; fix diff reviewed | https://github.com/Kyrylo0206/apd-hw-3/actions/runs/42523762154 |
 | 2026-11-08 | Local verification with the exact README command | Build of the app, unit-test and UI-test targets succeeded with no errors; earlier test runs stalled on simulator boot and then the disk filled up, so the simulator was reset and the run restarted; the full test result was not yet available when this was committed | `xcodebuild -project StudentDirectory.xcodeproj -scheme StudentDirectory -destination 'platform=iOS Simulator,name=iPhone 17' test` |
 
 ## Final review
@@ -34,13 +35,19 @@ you rejected or revised; if none was rejectable, explain why.
   - Design decision kept from the plan: swipe-to-delete is offered only on
     the main list, not on subject lists, so a detail screen lower in the
     navigation stack can never show a deleted student.
+  - Revised after CI: the plan kept the store in `SceneDelegate`; it moved to
+    the app delegate because the generated manifest allows multiple scenes,
+    and one store per scene would duplicate the authoritative data.
 - Exact local test command and result:
   `xcodebuild -project StudentDirectory.xcodeproj -scheme StudentDirectory -destination 'platform=iOS Simulator,name=iPhone 17' test`
   — the build step succeeds; a completed local test run had not been
   recorded when this was committed.
-- CI URL/status: https://github.com/Kyrylo0206/apd-hw-3/actions — the
-  implementation was pushed to `main`; no completed CI run had been recorded
-  when this was committed.
+- CI URL/status:
+  https://github.com/Kyrylo0206/apd-hw-3/actions/runs/42523762154 — failed
+  for commit `336e949` (unit tests passed, 7 flow UI tests failed because the
+  scene delegate was not attached). The fix is in the following commit; its
+  CI run is listed at https://github.com/Kyrylo0206/apd-hw-3/actions and had
+  not finished when this was committed.
 - Known limitation or remaining risk: local runs used the iOS 26.3.1
   simulator runtime with the iOS 26.2 SDK; GitHub Actions uses the runner's
   own Xcode and simulator, so CI is the reference result. UI tests depend on

@@ -21,9 +21,10 @@
 
 ### One shared `StudentStore`
 
-`SceneDelegate` creates exactly one `StudentStore` and injects it through
-initializers into every controller it builds; each controller passes the same
-instance on when it pushes or presents the next screen. There is no singleton
+The app delegate (`StudentDirectoryApp`) owns exactly one `StudentStore` and
+attaches `SceneDelegate` as the scene delegate class; `SceneDelegate` injects
+that store through initializers into the root controller, and each controller
+passes the same instance on when it pushes or presents the next screen. There is no singleton
 and no copied array:
 
 - list rows are computed from the store on every reload
